@@ -1,19 +1,23 @@
 #ifndef GAME_H
 #define GAME_H
+#include <SDL2/SDL.h>
 
+#define NUM_PIECES 7
 #define Inaltime 20
 #define Latime 10
 
+typedef struct {
+    char shape[4][4];
+    int x, y;//x-coloana,y-linia
+} Piece;
+
+extern Piece current_piece;
+
+extern char pieces[NUM_PIECES][4][4];
+
 void creeare_tabla(char tabla[Inaltime][Latime]);
-void desenare_tabla(char tabla[Inaltime][Latime]);
-void desenare_piesa(char piesa[4][4], int x, int y);
-
-extern char piesa_L[4][4]; //pot fi folosite si in alte fisiere ce contin game.h
-extern char piesa_L_invers[4][4];
-extern char piesa_Z[4][4];
-extern char piesa_Z_invers[4][4];
-extern char piesa_O[4][4];
-extern char piesa_I[4][4];
-char piesa_T[4][4];
-
+int check_game_over(char tabla[Inaltime][Latime]);  // Modificare aici
+void spawn_random_piece(char tabla[Inaltime][Latime]);  // Modificare aici
+int check_collision(char tabla[Inaltime][Latime], int newX, int newY, char shape[4][4]);  // Modificare aici
+void update_game(char tabla[Inaltime][Latime], SDL_Event *e);
 #endif
