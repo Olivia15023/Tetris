@@ -52,7 +52,24 @@ char pieces[NUM_PIECES][4][4] = {
         { '#', '#', '#', ' ' }
     }
 };
+// Functie pentru a roti piesa
+void rotire_piesa(char shape[4][4]) {
+    char temp[4][4];
 
+    // Rotim matricea în sensul acelor de ceasornic
+    for (int i = 0; i < 4; i++) {
+        for (int j = 0; j < 4; j++) {
+            temp[j][3 - i] = shape[i][j];
+        }
+    }
+
+    // Copiem rezultatul înapoi în piesă
+    for (int i = 0; i < 4; i++) {
+        for (int j = 0; j < 4; j++) {
+            shape[i][j] = temp[i][j];
+        }
+    }
+}
 void creeare_tabla(char tabla[Inaltime][Latime])
 {
     for (int i=0;i<Inaltime;i++)
@@ -74,6 +91,35 @@ int check_game_over(char tabla[Inaltime][Latime]) {
         }
     }
     return 0;  // Jocul continuă
+}
+//Functie pentru stergerea liniei
+void clear_full_lines(char tabla[Inaltime][Latime]) {
+    for (int i = Inaltime - 1; i >= 0; i--) {
+        int linie_plina = 1;
+        for (int j = 0; j < Latime; j++) {
+            if (tabla[i][j] == ' ') {
+                linie_plina = 0;
+                break;
+            }
+        }
+
+        if (linie_plina) {
+            // Mutăm liniile de deasupra în jos
+            for (int k = i; k > 0; k--) {
+                for (int j = 0; j < Latime; j++) {
+                    tabla[k][j] = tabla[k - 1][j];
+                }
+            }
+
+            // Golește prima linie
+            for (int j = 0; j < Latime; j++) {
+                tabla[0][j] = ' ';
+            }
+
+            // Verificăm aceeași linie din nou (deoarece o linie a coborât aici)
+            i++;
+        }
+    }
 }
 
 void spawn_random_piece(char tabla[Inaltime][Latime]) {
@@ -113,6 +159,27 @@ int check_collision(char tabla[Inaltime][Latime], int newX, int newY, char shape
 void update_game(char tabla[Inaltime][Latime], SDL_Event *e) {
     if (e && e->type == SDL_KEYDOWN) {
         switch (e->key.keysym.sym) {
+            case SDLK_SPACE:
+            {
+                char backup[4][4];
+    
+                // Salvăm forma curentă (în caz că rotația e invalidă)
+                for (int i = 0; i < 4; i++)
+                    for (int j = 0; j < 4; j++)
+                        backup[i][j] = current_piece.shape[i][j];
+    
+                // Rotește piesa
+                rotire_piesa(current_piece.shape);
+    
+                // Dacă piesa rotită intră în coliziune, revenim la forma inițială
+                if (check_collision(tabla, current_piece.x, current_piece.y, current_piece.shape)) {
+                    for (int i = 0; i < 4; i++)
+                        for (int j = 0; j < 4; j++)
+                            current_piece.shape[i][j] = backup[i][j];
+                }
+    
+                break;
+            }
             case SDLK_LEFT:
                 // Verifică coliziunea la stânga
                 if (!check_collision(tabla, current_piece.x - 1, current_piece.y, current_piece.shape)) {
@@ -152,6 +219,7 @@ void update_game(char tabla[Inaltime][Latime], SDL_Event *e) {
                     }
                 }
             }
+            clear_full_lines(tabla); // Verifică și șterge liniile complete
             spawn_random_piece(tabla); // Piesă nouă
         } else {
             current_piece.y++;  // Continuă căderea piesei

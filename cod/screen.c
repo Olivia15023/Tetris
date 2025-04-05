@@ -1,4 +1,5 @@
 #include <SDL2/SDL.h>
+#include <SDL2/SDL_ttf.h>
 #include "screen.h"
 
 SDL_Window* window = NULL;//fereasta aplicatiei
@@ -85,4 +86,33 @@ void close_screen() {
     SDL_DestroyRenderer(renderer);
     SDL_DestroyWindow(window);
     SDL_Quit();
+}
+// Functie pentru a desena meniul
+void draw_menu(TTF_Font *font) {
+    // Setează culoarea de fundal a ferestrei (gri închis)
+    SDL_SetRenderDrawColor(renderer, 30, 30, 30, 255);
+    SDL_RenderClear(renderer);
+
+    // Definim un dreptunghi pentru butonul "Start Game"
+    SDL_Rect button = { SCREEN_WIDTH / 2 - 100, SCREEN_HEIGHT / 2 - 40, 200, 80 };
+    // Setăm culoarea butonului (albastru)
+    SDL_SetRenderDrawColor(renderer, 70, 130, 180, 255);
+    SDL_RenderFillRect(renderer, &button);
+
+    SDL_Color white = {255, 255, 255};
+    SDL_Surface *textSurface = TTF_RenderText_Solid(font, "Start Game", white);
+    SDL_Texture *text = SDL_CreateTextureFromSurface(renderer, textSurface);
+
+    // Calculăm un dreptunghi pentru poziționarea textului în interiorul butonului (centrare)
+    SDL_Rect textRect = {
+        button.x + (button.w - textSurface->w) / 2,
+        button.y + (button.h - textSurface->h) / 2,
+        textSurface->w,
+        textSurface->h
+    };
+    SDL_RenderCopy(renderer, text, NULL, &textRect);
+
+    SDL_FreeSurface(textSurface);
+    SDL_DestroyTexture(text);
+    SDL_RenderPresent(renderer);
 }
