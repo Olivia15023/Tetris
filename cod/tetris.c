@@ -1,66 +1,103 @@
-#include<stdio.h>
-#include<stdlib.h>
-#include<stdint.h>
-#include<time.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <stdint.h>
+#include <time.h>
 #include <SDL2/SDL.h>
-#include"game.h"
+#include <SDL2/SDL_ttf.h>
+#include "game.h"
 #include "screen.h"
 
-#define Inaltime 20
-#define Latime 10
+GameState gameState = MENU;
 
 int main()
 {
-    char tabla[Inaltime][Latime];
+    // Board extins cu VISIBLE_OFFSET
+    char board[Height + VISIBLE_OFFSET][Width];
 
-    if (!init_screen()) {
-        fprintf(stderr, "Eroare la initializarea SDL!\n");
+    if (!init_screen())
+    {
+        fprintf(stderr, "Error initializing SDL!\n");
         return 1;
     }
-    if (TTF_Init() == -1) {
-        fprintf(stderr, "Eroare la initializarea SDL_ttf: %s\n", TTF_GetError());
+
+    if (TTF_Init() == -1)
+    {
+        fprintf(stderr, "Error initializing SDL_ttf: %s\n", TTF_GetError());
         return 1;
     }
+
     TTF_Font *font = TTF_OpenFont("arial.ttf", 32);
-    if (!font) {
-        fprintf(stderr, "Eroare la încărcarea fontului: %s\n", TTF_GetError());
+    if (!font)
+    {
+        fprintf(stderr, "Error loading font: %s\n", TTF_GetError());
         return 1;
     }
-    srand(time(NULL)); // pentru piese random
-    creeare_tabla(tabla);
-    
-    GameState gameState = MENU;
+
+    srand((unsigned int)time(NULL));
+    create_board(board);
+
     int quit = 0;
     SDL_Event e;
 
-    while (!quit) {
-        while (SDL_PollEvent(&e)) {
-            if (e.type == SDL_QUIT) quit = 1;
+    while (!quit)
+    {
+        while (SDL_PollEvent(&e))
+        {
+            if (e.type == SDL_QUIT)
+            {
+                quit = 1;
+            }
 
-            if (gameState == MENU) {
-                if (e.type == SDL_MOUSEBUTTONDOWN) {
+            if (gameState == MENU)
+            {
+                if (e.type == SDL_MOUSEBUTTONDOWN)
+                {
                     int x = e.button.x;
                     int y = e.button.y;
-                    // Verificăm dacă s-a dat click pe butonul "Start Game"
+
                     if (x >= SCREEN_WIDTH / 2 - 100 && x <= SCREEN_WIDTH / 2 + 100 &&
-                        y >= SCREEN_HEIGHT / 2 - 40 && y <= SCREEN_HEIGHT / 2 + 40) {
-                        gameState = GAME;
-                        spawn_random_piece(tabla);
+                        y >= SCREEN_HEIGHT / 2 - 40 && y <= SCREEN_HEIGHT / 2 + 40)
+                    {
+                        restart_game(board);
                     }
                 }
-            } else if (gameState == GAME) {
-                // Dacă suntem în joc, tratăm inputul 
-                update_game(tabla, &e);
+            }
+            else if (gameState == GAME)
+            {
+                update_game(board, &e);
+            }
+            else if (gameState == GAME_OVER)
+            {
+                if (e.type == SDL_MOUSEBUTTONDOWN)
+                {
+                    int x = e.button.x;
+                    int y = e.button.y;
+
+                    if (x >= SCREEN_WIDTH / 2 - 100 && x <= SCREEN_WIDTH / 2 + 100 &&
+                        y >= SCREEN_HEIGHT / 2 && y <= SCREEN_HEIGHT / 2 + 60)
+                    {
+                        restart_game(board);
+                    }
+                }
             }
         }
-        
-        // Desenare în funcție de starea curentă
-        if (gameState == MENU) {
+
+        if (gameState == MENU)
+        {
             draw_menu(font);
-        } else if (gameState == GAME) {
-            update_game(tabla, NULL);
-            draw_board(tabla);
+        }
+        else if (gameState == GAME)
+        {
+            update_game(board, NULL);
+            draw_board(board);
             draw_piece(current_piece.shape, current_piece.x, current_piece.y);
+            render_frame();
+        }
+        else if (gameState == GAME_OVER)
+        {
+            draw_board(board);
+            draw_piece(current_piece.shape, current_piece.x, current_piece.y);
+            draw_game_over(font);
             render_frame();
         }
 

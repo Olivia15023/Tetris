@@ -1,24 +1,28 @@
 #ifndef GAME_H
 #define GAME_H
+
 #include <SDL2/SDL.h>
+#include "screen.h"
+#include "config.h"
 
 #define NUM_PIECES 7
-#define Inaltime 20
-#define Latime 10
 
-typedef struct {
+typedef struct
+{
     char shape[4][4];
-    int x, y;//x-coloana,y-linia
+    int x, y; // x = column, y = row
 } Piece;
 
+extern GameState gameState;
 extern Piece current_piece;
-
 extern char pieces[NUM_PIECES][4][4];
-void rotire_piesa(char shape[4][4]);
-void creeare_tabla(char tabla[Inaltime][Latime]);
-int check_game_over(char tabla[Inaltime][Latime]);  // Modificare aici
-void clear_full_lines(char tabla[Inaltime][Latime]);
-void spawn_random_piece(char tabla[Inaltime][Latime]);  // Modificare aici
-int check_collision(char tabla[Inaltime][Latime], int newX, int newY, char shape[4][4]);  // Modificare aici
-void update_game(char tabla[Inaltime][Latime], SDL_Event *e);
+
+void rotate_piece(char shape[4][4]);
+void create_board(char board[Height + VISIBLE_OFFSET][Width]);
+void clear_full_lines(char board[Height + VISIBLE_OFFSET][Width]);
+void spawn_random_piece(char board[Height + VISIBLE_OFFSET][Width]);
+int check_collision(char board[Height + VISIBLE_OFFSET][Width], int newX, int newY, char shape[4][4]);
+void restart_game(char board[Height + VISIBLE_OFFSET][Width]);
+void update_game(char board[Height + VISIBLE_OFFSET][Width], SDL_Event *e);
+
 #endif

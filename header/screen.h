@@ -1,26 +1,21 @@
 #ifndef SCREEN_H
 #define SCREEN_H
 
+#include "game.h"
+#include "config.h"
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_ttf.h>
-#include "game.h"
 
-
-#define BLOCK_SIZE 30
-#define SCREEN_WIDTH (Latime * BLOCK_SIZE)
-#define SCREEN_HEIGHT (Inaltime * BLOCK_SIZE)
-
-typedef enum {
-    MENU,
-    GAME
-} GameState;
+#define SCREEN_WIDTH (Width * BLOCK_SIZE)
+#define SCREEN_HEIGHT (Height * BLOCK_SIZE)
 
 int init_screen();
 void draw_block(int x, int y, SDL_Color color);
-void draw_board(char tabla[Inaltime][Latime]);
-void draw_piece(char piesa[4][4], int x, int y);
+void draw_board(char board[Height + VISIBLE_OFFSET][Width]);  // <- modificat aici!
+void draw_piece(char piece[4][4], int x, int y);
 void render_frame();
 void close_screen();
 void draw_menu(TTF_Font *font);
+void draw_game_over(TTF_Font *font);
 
 #endif
