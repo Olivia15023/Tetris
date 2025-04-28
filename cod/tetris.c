@@ -20,19 +20,6 @@ int main()
         return 1;
     }
 
-    if (TTF_Init() == -1)
-    {
-        fprintf(stderr, "Error initializing SDL_ttf: %s\n", TTF_GetError());
-        return 1;
-    }
-
-    TTF_Font *font = TTF_OpenFont("arial.ttf", 32);
-    if (!font)
-    {
-        fprintf(stderr, "Error loading font: %s\n", TTF_GetError());
-        return 1;
-    }
-
     srand((unsigned int)time(NULL));
     create_board(board);
 
@@ -84,28 +71,28 @@ int main()
 
         if (gameState == MENU)
         {
-            draw_menu(font);
+            draw_menu();
         }
         else if (gameState == GAME)
         {
             update_game(board, NULL);
             draw_board(board);
-            draw_piece(current_piece.shape, current_piece.x, current_piece.y);
+            draw_piece(current_piece.shape, current_piece.x, current_piece.y, current_piece.type);
+            draw_score_and_level();
             render_frame();
         }
         else if (gameState == GAME_OVER)
         {
             draw_board(board);
-            draw_piece(current_piece.shape, current_piece.x, current_piece.y);
-            draw_game_over(font);
+            draw_piece(current_piece.shape, current_piece.x, current_piece.y, current_piece.type);
+            draw_game_over();
             render_frame();
         }
 
         SDL_Delay(100);
     }
 
-    TTF_CloseFont(font);
-    TTF_Quit();
+    
     close_screen();
     return 0;
 }

@@ -12,6 +12,10 @@ extern GameState gameState;
 static Uint32 lastFall = 0;
 const Uint32 fallInterval = 500;
 
+static int score = 0;
+static int level = 0;
+static int total_lines_cleared = 0;
+
 char pieces[NUM_PIECES][4][4] = {
     { // L
         { ' ', ' ', ' ', ' ' },
@@ -87,8 +91,38 @@ void create_board(char board[Height + VISIBLE_OFFSET][Width])
     }
 }
 
+
+void update_score_and_level(int lines_cleared)
+{
+    static const int score_table[] = {0, 40, 100, 300, 1200};
+
+    if(lines_cleared >= 1 && lines_cleared <= 4)
+    {
+        score += score_table[lines_cleared] * (level + 1);
+        total_lines_cleared += lines_cleared;
+        level = total_lines_cleared/10;
+    }
+}
+int get_score(void)
+{
+    return score;
+}
+
+int get_level(void)
+{
+    return level;
+}
+
+void reset_score_and_level(void)
+{
+    score = 0;
+    level = 0;
+    total_lines_cleared = 0;
+}
+
 void clear_full_lines(char board[Height + VISIBLE_OFFSET][Width])
 {
+    int lines_cleared = 0;
     for (int i = Height - 1; i >= 0; i--)
     {
         int full_line = 1;
@@ -102,6 +136,8 @@ void clear_full_lines(char board[Height + VISIBLE_OFFSET][Width])
         }
         if (full_line)
         {
+            lines_cleared++;
+            
             for (int k = i; k > -VISIBLE_OFFSET; k--)
             {
                 for (int j = 0; j < Width; j++)
@@ -115,6 +151,10 @@ void clear_full_lines(char board[Height + VISIBLE_OFFSET][Width])
             }
             i++; // Recheck same line
         }
+    }
+    if(lines_cleared > 0)
+    {
+        update_score_and_level(lines_cleared);
     }
 }
 
@@ -141,6 +181,7 @@ int check_collision(char board[Height + VISIBLE_OFFSET][Width], int newX, int ne
 void spawn_random_piece(char board[Height + VISIBLE_OFFSET][Width])
 {
     int r = rand() % NUM_PIECES;
+    current_piece.type = (PieceType)r;
 
     for (int i = 0; i < 4; i++)
     {
@@ -168,6 +209,7 @@ void spawn_random_piece(char board[Height + VISIBLE_OFFSET][Width])
 void restart_game(char board[Height + VISIBLE_OFFSET][Width])
 {
     create_board(board);
+    reset_score_and_level();
     spawn_random_piece(board);
     gameState = GAME;
 }
@@ -210,25 +252,30 @@ void update_game(char board[Height + VISIBLE_OFFSET][Width], SDL_Event *e)
     }
 
     Uint32 currentTime = SDL_GetTicks();
-    if (currentTime - lastFall > fallInterval)
+
+    int currentLevel = get_level();
+    int interval = 800 / (1 + currentLevel);
+    if (interval < 100) interval = 100;
+
+if (currentTime - lastFall > interval)
+{
+    if (check_collision(board, current_piece.x, current_piece.y + 1, current_piece.shape))
     {
-        if (check_collision(board, current_piece.x, current_piece.y + 1, current_piece.shape))
+        for (int i = 0; i < 4; i++)
         {
-            for (int i = 0; i < 4; i++)
+            for (int j = 0; j < 4; j++)
             {
-                for (int j = 0; j < 4; j++)
+                if (current_piece.shape[i][j] != ' ')
                 {
-                    if (current_piece.shape[i][j] != ' ')
+                    int y = current_piece.y + i;
+                    int x = current_piece.x + j;
+                    if (x >= 0 && x < Width && y + VISIBLE_OFFSET >= 0 && y + VISIBLE_OFFSET < Height + VISIBLE_OFFSET)
                     {
-                        int y = current_piece.y + i;
-                        int x = current_piece.x + j;
-                        if (x >= 0 && x < Width && y + VISIBLE_OFFSET >= 0 && y + VISIBLE_OFFSET < Height + VISIBLE_OFFSET)
-                        {
-                            board[y + VISIBLE_OFFSET][x] = '#';
-                        }
+                        board[y + VISIBLE_OFFSET][x] = '#';
                     }
                 }
             }
+        }
             clear_full_lines(board);
             spawn_random_piece(board);
         }
@@ -239,3 +286,4 @@ void update_game(char board[Height + VISIBLE_OFFSET][Width], SDL_Event *e)
         lastFall = currentTime;
     }
 }
+

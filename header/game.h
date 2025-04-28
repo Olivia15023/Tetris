@@ -7,10 +7,12 @@
 
 #define NUM_PIECES 7
 
+
 typedef struct
 {
     char shape[4][4];
     int x, y; // x = column, y = row
+    PieceType type;
 } Piece;
 
 extern GameState gameState;
@@ -19,10 +21,15 @@ extern char pieces[NUM_PIECES][4][4];
 
 void rotate_piece(char shape[4][4]);
 void create_board(char board[Height + VISIBLE_OFFSET][Width]);
+void update_score_and_level(int lines_cleared);
+int get_score(void);
+int get_level(void);
+void reset_score_and_level(void);
 void clear_full_lines(char board[Height + VISIBLE_OFFSET][Width]);
 void spawn_random_piece(char board[Height + VISIBLE_OFFSET][Width]);
 int check_collision(char board[Height + VISIBLE_OFFSET][Width], int newX, int newY, char shape[4][4]);
 void restart_game(char board[Height + VISIBLE_OFFSET][Width]);
 void update_game(char board[Height + VISIBLE_OFFSET][Width], SDL_Event *e);
+
 
 #endif
