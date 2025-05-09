@@ -45,7 +45,7 @@ int init_screen()
     return 1;
 }
 
-void draw_block(int x, int y, SDL_Color color)
+void draw_block(int x, int y, SDL_Color color,bool is_bomb)
 {
     SDL_Rect block;
     block.x = (x+ SIDE_PANEL_WIDTH) * BLOCK_SIZE;
@@ -70,6 +70,26 @@ void draw_block(int x, int y, SDL_Color color)
     };
     SDL_SetRenderDrawColor(renderer, 255, 255, 255, 100); 
     SDL_RenderFillRect(renderer, &highlight);
+    if (is_bomb) 
+    {
+        SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255); // negru
+        SDL_Rect bomb_circle = {
+            block.x + BLOCK_SIZE / 4,
+            block.y + BLOCK_SIZE / 4,
+            BLOCK_SIZE / 2,
+            BLOCK_SIZE / 2
+        };
+        SDL_RenderFillRect(renderer, &bomb_circle);
+    
+        SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255); // roșu
+        SDL_Rect wick = {
+            block.x + BLOCK_SIZE / 2 - 2,
+            block.y + 2,
+            4,
+            4
+        };
+        SDL_RenderFillRect(renderer, &wick);
+    }
 }
 
 void draw_board(char board[Height + VISIBLE_OFFSET][Width])
@@ -98,7 +118,8 @@ void draw_board(char board[Height + VISIBLE_OFFSET][Width])
             if (bi >= 0 && bi < Height + VISIBLE_OFFSET && board[bi][j] != ' ')
             {
                 SDL_Color white = {255, 255, 255, 255};
-                draw_block(j, i, white);
+                bool is_bomb = (board[bi][j] == 'B');
+                draw_block(j, i, white, is_bomb);
             }
             
         }
@@ -121,7 +142,7 @@ Color get_piece_color(PieceType type)
         default:      return (Color){255, 255, 255};   // fallback alb
     }
 }
-void draw_piece(char piece[4][4], int x, int y,PieceType type)
+void draw_piece(char piece[4][4], int x, int y, PieceType type, bool has_bomb, int bomb_x, int bomb_y)
 {
     Color c = get_piece_color(type);
     SDL_Color color = {c.r, c.g, c.b, 255};
@@ -132,7 +153,11 @@ void draw_piece(char piece[4][4], int x, int y,PieceType type)
         {
             if (piece[i][j] != ' ')
             {
-                draw_block(x + j, y + i, color);
+                int gx = x + j;
+                int gy = y + i;
+                bool is_bomb = has_bomb && i == bomb_y && j == bomb_x;
+
+                draw_block(gx, gy, color, is_bomb);
             }
         }
     }
@@ -245,3 +270,143 @@ void draw_score_and_level(void)
     snprintf(buffer, sizeof(buffer), "Level: %d", get_level());
     draw_text(buffer, 20, SCREEN_HEIGHT - 40); 
 }
+
+void draw_piece_preview(char shape[4][4], int x, int y, int box_size, PieceType type, bool has_bomb, int bomb_x, int bomb_y)
+{
+    Color c = get_piece_color(type);
+    SDL_Color color = {c.r, c.g, c.b, 255};
+
+    int min_i = 4, max_i = 0, min_j = 4, max_j = 0;
+    for(int i = 0; i < 4; i++)
+    {
+        for(int j = 0; j < 4; j++)
+        {
+            if(shape[i][j] != ' ')
+            {
+                if(i < min_i) min_i = i;
+                if(i > max_i) max_i = i;
+                if(j < min_j) min_j = j;
+                if(j > max_j) max_j = j;
+            }
+        }
+    }
+
+    int piece_width = (max_j - min_j + 1) * box_size;
+    int piece_height = (max_i - min_i + 1) * box_size;
+
+    int target_width = 6 * box_size;
+    int target_height = 4 * box_size;
+
+    int offset_x = x + (target_width - piece_width) / 2;
+    int offset_y = y + (target_height - piece_height) / 2;
+
+    for(int i = 0; i < 4; i++)
+    {
+        for(int j = 0; j < 4; j++)
+        {
+            if(shape[i][j] != ' ')
+            {
+                SDL_Rect rect = {
+                    offset_x + (j - min_j) * box_size,
+                    offset_y + (i - min_i) * box_size,
+                    box_size,
+                    box_size
+                };
+
+                bool is_bomb = has_bomb && i == bomb_y && j == bomb_x;
+
+                SDL_SetRenderDrawColor(renderer, color.r, color.g, color.b, 255);
+                SDL_RenderFillRect(renderer, &rect);
+                SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
+                SDL_RenderDrawRect(renderer, &rect);
+
+                if (is_bomb)
+                {
+                    SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
+                    SDL_Rect bomb = {
+                        rect.x + box_size / 4,
+                        rect.y + box_size / 4,
+                        box_size / 2,
+                        box_size / 2
+                    };
+                    SDL_RenderFillRect(renderer, &bomb);
+
+                    SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
+                    SDL_Rect wick = {
+                        rect.x + box_size / 2 - 2,
+                        rect.y + 2,
+                        4,
+                        4
+                    };
+                    SDL_RenderFillRect(renderer, &wick);
+                }
+            }
+        }
+    }
+}
+
+void draw_next_pieces(void)
+{
+    int box_size = 16;
+    int box_width = 6 * box_size;
+    int box_height = 4 * box_size;
+
+    int preview_x = SCREEN_WIDTH - box_width - 20;
+    int preview_y = 20;
+
+    SDL_Rect preview_area = { preview_x, preview_y, box_width, 2 * box_height + 10 };
+    SDL_SetRenderDrawColor(renderer, 40, 40, 40, 255);
+    SDL_RenderFillRect(renderer, &preview_area);
+    SDL_SetRenderDrawColor(renderer, 100, 100, 100, 255);
+    SDL_RenderDrawRect(renderer, &preview_area);
+
+  
+    draw_piece_preview(
+        next_piece.shape,
+        preview_x,
+        preview_y,
+        box_size,
+        next_piece.type,
+        next_piece.has_bomb,
+        next_piece.bomb_x,
+        next_piece.bomb_y
+    );
+    
+    draw_piece_preview(
+        next_next_piece.shape,
+        preview_x,
+        preview_y + box_height + 10,
+        box_size,
+        next_next_piece.type,
+        next_next_piece.has_bomb,
+        next_next_piece.bomb_x,
+        next_next_piece.bomb_y
+    );
+}
+void draw_high_score(int high_score, TTF_Font *font, int x, int y)
+{
+    char text[64];
+    sprintf(text, "High Score: %d", high_score);
+    SDL_Color color = {255, 255, 0, 255}; 
+    SDL_Surface *surface = TTF_RenderText_Solid(font, text, color);
+    SDL_Texture *texture = SDL_CreateTextureFromSurface(renderer, surface);
+
+    SDL_Rect dest = {x, y, surface->w, surface->h};
+    SDL_RenderCopy(renderer, texture, NULL, &dest);
+
+    SDL_FreeSurface(surface);
+    SDL_DestroyTexture(texture);
+}
+void draw_new_high_score(TTF_Font *font, int x, int y)
+{
+    SDL_Color color = {255, 50, 50, 255}; // roșu aprins
+    SDL_Surface *surface = TTF_RenderText_Solid(font, "New High Score!", color);
+    SDL_Texture *texture = SDL_CreateTextureFromSurface(renderer, surface);
+
+    SDL_Rect dest = {x, y, surface->w, surface->h};
+    SDL_RenderCopy(renderer, texture, NULL, &dest);
+
+    SDL_FreeSurface(surface);
+    SDL_DestroyTexture(texture);
+}
+
