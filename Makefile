@@ -1,6 +1,6 @@
 CC = gcc
 CFLAGS = -Wall -Iheader $(shell sdl2-config --cflags)
-LDFLAGS = $(shell sdl2-config --libs) -lSDL2_ttf
+LDFLAGS = $(shell sdl2-config --libs) -lSDL2_ttf -lSDL2_mixer -lm
 SRC = cod/tetris.c cod/game.c cod/screen.c
 OBJ = $(SRC:.c=.o)
 EXEC = tetris
